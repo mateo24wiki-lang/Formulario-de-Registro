@@ -1,7 +1,16 @@
 import streamlit as st
 import re
-import qrcode
 from io import BytesIO
+
+# Intentamos importar qrcode y Pillow de forma segura
+try:
+    import qrcode
+    from PIL import Image as PilImage
+    QR_LIB_AVAILABLE = True
+except Exception:
+    qrcode = None
+    PilImage = None
+    QR_LIB_AVAILABLE = False
 
 # Formulario de Registro de Mascotas (ejecutable)
 # Ejecutar: streamlit run formulario.py
@@ -73,41 +82,51 @@ Teléfono: {data['numero_telefonico']}
 Dirección: {data['direccion']}
 Notas: {data['notas']}"""
     
-    try:
-        # Crear el código QR
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(qr_data)
-        qr.make(fit=True)
-        
-        # Generar imagen del QR
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Mostrar el QR
-        st.subheader("Código QR del Registro")
-        st.image(img, caption="Escanea este código para ver los datos del registro", width=300)
-        
-        # Opción para descargar el QR
-        buffer = BytesIO()
-        img.save(buffer, format="PNG")
-        buffer.seek(0)
-        
-        st.download_button(
-            label="Descargar código QR",
-            data=buffer.getvalue(),
-            file_name=f"qr_mascota_{data['nombre_mascota']}.png",
-            mime="image/png"
-        )
-        
-        # Botón para limpiar y nuevo registro
-        if st.button("Nuevo Registro"):
-            st.session_state.form_submitted = False
-            st.session_state.form_data = {}
-            st.rerun()
-            
-    except Exception as e:
-        st.error(f"Error al generar el código QR: {e}")
+    # Verificamos que las librerías estén disponibles
+    if not QR_LIB_AVAILABLE:
+        st.error("La librería 'qrcode' o 'Pillow' no está disponible en este entorno.\nInstala las dependencias con: pip install qrcode[pil] Pillow\nSi estás desplegando en Streamlit Cloud, añade un archivo requirements.txt con estas líneas:\n\nstreamlit\nqrcode[pil]\nPillow\n")
+    else:
+        try:
+            # Usamos la forma simple: qrcode.make devuelve una imagen PIL
+            img = qrcode.make(qr_data)
+
+            # Asegurarnos de que sea una imagen PIL.Image
+            try:
+                from PIL import Image as _PilCheck
+                if not isinstance(img, _PilCheck.Image):
+                    # Algunos wrappers pueden devolver objetos distintos; intentar obtener la imagen
+                    try:
+                        img = img.get_image()
+                    except Exception:
+                        pass
+            except Exception:
+                # Si por alguna razón Pillow no está disponible aquí, capturamos y seguimos
+                pass
+
+            # Mostrar el QR
+            st.subheader("Código QR del Registro")
+            st.image(img, caption="Escanea este código para ver los datos del registro", width=300)
+
+            # Preparar descarga
+            buffer = BytesIO()
+            # Normalizar nombre de archivo (evitar caracteres problemáticos)
+            safe_name = re.sub(r"[^0-9A-Za-z\-_.]", "_", data['nombre_mascota']) or "mascota"
+            # Guardar imagen en buffer
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+
+            st.download_button(
+                label="Descargar código QR",
+                data=buffer.getvalue(),
+                file_name=f"qr_mascota_{safe_name}.png",
+                mime="image/png"
+            )
+
+            # Botón para limpiar y nuevo registro
+            if st.button("Nuevo Registro"):
+                st.session_state.form_submitted = False
+                st.session_state.form_data = {}
+                st.rerun()
+                
+        except Exception as e:
+            st.error(f"Error al generar el código QR: {e}")
