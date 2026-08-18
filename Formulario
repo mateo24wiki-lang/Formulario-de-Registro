@@ -1,12 +1,36 @@
 import streamlit as st
+import re
 
-st.title("Formulario de Registro")
+st.title("Formulario de Registro de Mascotas")
 
 with st.form(key="registro_form"):
-    nombre_mascota = st.text_input("Nombre de la mascota")
-    nombre_dueno = st.text_input("Nombre del dueño")
-    numero_telefonico = st.text_input("Número de teléfono")
-    submit_button = st.form_submit_button(label="Enviar")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Datos de la Mascota")
+        nombre_mascota = st.text_input("Nombre de la mascota")
+    
+    with col2:
+        st.subheader("Datos del Dueño")
+        nombre_dueno = st.text_input("Nombre completo del dueño")
+        numero_telefonico = st.text_input("Número de teléfono")
+    
+    st.subheader("Información Adicional")
+    direccion = st.text_area("Dirección completa")
+    notas = st.text_area("Notas adicionales (vacunas, alergias, etc.)")
+    
+    submit_button = st.form_submit_button(label="Enviar Registro", use_container_width=True)
 
 if submit_button:
-    st.write(f"Mi nombre es {nombre_mascota} y mi dueño es {nombre_dueno} con número de teléfono {numero_telefonico}")
+    # Validación
+    if nombre_mascota and nombre_dueno and numero_telefonico:
+        if st.success("¡Registro completado exitosamente!")
+            st.info(f"""
+            **Resumen del Registro:**
+            - **Mascota:** {nombre_mascota} ({tipo_mascota})
+            - **Dueño:** {nombre_dueno}
+            - **Teléfono:** {numero_telefonico}
+            - **Dirección:** {direccion}
+            """)
+        else:
+            st.error("Por favor completa todos los campos requeridos")
