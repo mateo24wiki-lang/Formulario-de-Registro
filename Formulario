@@ -5,10 +5,7 @@ st.title("Formulario de Registro")
 with st.form(key="registro_form"):
     nombre_mascota = st.text_input("Nombre de la mascota")
     nombre_dueno = st.text_input("Nombre del dueño")
-    numero_telefonico = st.text_input("Número de teléfono",
-                                      min_value=0,
-                                      max_value=120,
-                                      value=25)
+    numero_telefonico = st.text_input("Número de teléfono")
     submit_button = st.form_submit_button(label="Enviar")
 
 if submit_button:
